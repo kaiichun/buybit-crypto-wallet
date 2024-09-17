@@ -1,4 +1,4 @@
-import 'package:buybit/screens/market_screen.dart';
+import 'package:buybit/navigation/navigation_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -11,12 +11,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Crypto App',
+      title: 'BuyBit',
       theme: ThemeData(
         primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MarketScreen(),
+      home: const NavigationScreen(),
     );
   }
 }

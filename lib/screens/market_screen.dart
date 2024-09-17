@@ -19,6 +19,14 @@ class _MarketScreenState extends State<MarketScreen> {
     _futureCoins = _apiService.fetchCoins();
   }
 
+  String formatPrice(double price) {
+    if (price < 1) {
+      return '\$${price.toString()}';
+    } else {
+      return '\$${price.toStringAsFixed(2)}';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +55,16 @@ class _MarketScreenState extends State<MarketScreen> {
             future: _futureCoins,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Loading data, please wait...'),
+                    ],
+                  ),
+                );
               } else if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -57,14 +74,13 @@ class _MarketScreenState extends State<MarketScreen> {
                 return Column(
                   children: coins.map((coin) {
                     return marketItem(
-                      coin.id,
-                      coin.symbol.toUpperCase(),
-                      coin.name,
-                      '\$${coin.currentPrice.toStringAsFixed(2)}',
-                      '${coin.priceChangePercentage24h.toStringAsFixed(2)}%',
-                      coin.priceChangePercentage24h >= 0,
-                      coin.imageUrl
-                    );
+                        coin.id,
+                        coin.symbol.toUpperCase(),
+                        coin.name,
+                        formatPrice(coin.currentPrice),
+                        '${coin.priceChangePercentage24h.toStringAsFixed(2)}%',
+                        coin.priceChangePercentage24h >= 0,
+                        coin.imageUrl);
                   }).toList(),
                 );
               }
@@ -75,18 +91,17 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  Widget filterButton(String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: ElevatedButton(
-        onPressed: () {},
-        child: Text(label),
-      ),
-    );
-  }
-
   Widget marketItem(String id, String pair, String name, String price,
       String percentage, bool isPositive, String imageUrl) {
+    String letTextBecomeDot(String text, int wordLimit) {
+      List<String> words = text.split(' ');
+      if (words.length > wordLimit) {
+        return words.take(wordLimit).join(' ') + '...';
+      } else {
+        return text;
+      }
+    }
+
     return Card(
       elevation: 2,
       color: const Color.fromARGB(255, 240, 240, 240),
@@ -112,7 +127,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     Text(pair,
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text(name),
+                    Text(letTextBecomeDot(name, 2)),
                   ],
                 ),
               ],
