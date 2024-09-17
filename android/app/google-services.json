@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "910227525202",
+    "project_id": "buybit-fc-s5-kc",
+    "storage_bucket": "buybit-fc-s5-kc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:910227525202:android:886c18738900f0157b998b",
+        "android_client_info": {
+          "package_name": "com.alvin.buybit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9xUYOm5JoMph9Y4ZM_1AlcvFhQWu9yZI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
