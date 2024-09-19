@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
-
   @override
   _MarketScreenState createState() => _MarketScreenState();
 }
@@ -12,13 +11,28 @@ class MarketScreen extends StatefulWidget {
 class _MarketScreenState extends State<MarketScreen> {
   late Future<List<Coin>> _futureCoins;
   final ApiService _apiService = ApiService();
-
+  TextEditingController searchBarController = TextEditingController();
+  List<Coin> _filteredCoins = [];
+  List<Coin> _allCoins = [];
   @override
   void initState() {
     super.initState();
     _futureCoins = _apiService.fetchCoins();
+    searchBarController.addListener(_filterCoins);
   }
-
+  @override
+  void dispose() {
+    searchBarController.dispose();
+    super.dispose();
+  }
+  void _filterCoins() {
+    String query = searchBarController.text.toLowerCase();
+    setState(() {
+      _filteredCoins = _allCoins.where((coin) {
+        return coin.name.toLowerCase().contains(query)|| coin.symbol.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
   String formatPrice(double price) {
     if (price < 1) {
       return '\$${price.toString()}';
@@ -26,7 +40,6 @@ class _MarketScreenState extends State<MarketScreen> {
       return '\$${price.toStringAsFixed(2)}';
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,51 +61,69 @@ class _MarketScreenState extends State<MarketScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
+      body: Column(
         children: [
-          FutureBuilder<List<Coin>>(
-            future: _futureCoins,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Loading data, please wait...'),
-                    ],
-                  ),
-                );
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('No data found'));
-              } else {
-                final coins = snapshot.data!;
-                return Column(
-                  children: coins.map((coin) {
-                    return marketItem(
-                        coin.id,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            child: TextField(
+              controller: searchBarController,
+              decoration: InputDecoration(
+                hintText: 'Search coin',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.search),
+              ),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Coin>>(
+              future: _futureCoins,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading data, please wait...'),
+                      ],
+                    ),
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No data found'));
+                } else {
+                  _allCoins = snapshot.data!;
+                  _filteredCoins =
+                      _filteredCoins.isNotEmpty ? _filteredCoins : _allCoins;
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: _filteredCoins.length,
+                    itemBuilder: (context, index) {
+                      final coin = _filteredCoins[index];
+                      return marketItem(
                         coin.symbol.toUpperCase(),
                         coin.name,
                         formatPrice(coin.currentPrice),
                         '${coin.priceChangePercentage24h.toStringAsFixed(2)}%',
                         coin.priceChangePercentage24h >= 0,
-                        coin.imageUrl);
-                  }).toList(),
-                );
-              }
-            },
+                        coin.imageUrl,
+                      );
+                    },
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget marketItem(String id, String pair, String name, String price,
-      String percentage, bool isPositive, String imageUrl) {
+  Widget marketItem(String pair, String name, String price, String percentage,
+      bool isPositive, String imageUrl) {
     String letTextBecomeDot(String text, int wordLimit) {
       List<String> words = text.split(' ');
       if (words.length > wordLimit) {
@@ -101,7 +132,6 @@ class _MarketScreenState extends State<MarketScreen> {
         return text;
       }
     }
-
     return Card(
       elevation: 2,
       color: const Color.fromARGB(255, 240, 240, 240),
