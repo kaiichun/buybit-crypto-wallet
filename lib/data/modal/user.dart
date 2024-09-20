@@ -1,36 +1,29 @@
 import 'package:buybit/data/modal/wallet.dart';
 
-class User {
+class BuyBitUser {
   final String id;
   final String name;
-    final String email;
-  final int phoneNumber;
+  final String email;
   final List<Wallet> wallets;
-
-  User({
+  BuyBitUser({
     required this.id,
     required this.name,
     required this.email,
-    required this.phoneNumber,
     required this.wallets,
   });
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
-      'email': email, 
-      'phone': phoneNumber,
+      'email': email,
       'wallets': wallets.map((wallet) => wallet.toMap()).toList(),
     };
   }
-
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
+  factory BuyBitUser.fromMap(Map<String, dynamic> map) {
+    return BuyBitUser(
       id: map['id'],
       name: map['name'],
-      email: map['email'],  
-      phoneNumber: map['phoneNumber'],
+      email: map['email'],
       wallets: List<Wallet>.from(map['wallets']?.map((w) => Wallet.fromMap(w))),
     );
   }
