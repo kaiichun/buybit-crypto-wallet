@@ -10,9 +10,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   void _logout() {
     _authService.logout();
-    // After logout, navigate to the login screen or show a message
     Navigator.of(context).pushReplacementNamed(
-        '/login'); // Replace with your actual login screen route
+        '/login');
   }
   @override
   Widget build(BuildContext context) {
@@ -36,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _logout, // Logout action
+            onPressed: _logout,
             tooltip: 'Logout',
           ),
         ],

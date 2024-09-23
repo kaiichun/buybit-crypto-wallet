@@ -12,7 +12,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color.fromARGB(255, 58, 166, 254),
+          backgroundColor: const Color.fromARGB(255, 119, 194, 255),
           title: const Row(
             children: [
               Icon(Icons.wallet, color: Colors.white),

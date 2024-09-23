@@ -29,7 +29,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex], // Display the selected screen
+      body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBottomBarScreen(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemTapped,
