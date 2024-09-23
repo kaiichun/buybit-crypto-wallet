@@ -1,34 +1,33 @@
-import 'package:buybit/data/modal/order.dart';
 
 class Wallet {
-  final String id;
-  final String name;
-  final double balance;
-  final List<Order> orders;
-
+  String id;
+  String name;
+  String currency;
+  double balance;
+  bool isDefault;
   Wallet({
     required this.id,
     required this.name,
-    required this.balance,
-    required this.orders,
+    required this.currency,
+    this.balance = 0.0,
+    this.isDefault = false,
   });
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
+      'currency': currency,
       'balance': balance,
-      'orders': orders.map((order) => order.toMap()).toList(),
+      'isDefault': isDefault,
     };
   }
-
-  factory Wallet.fromMap(Map<String, dynamic> map) {
+  static Wallet fromMap(Map<String, dynamic> map) {
     return Wallet(
       id: map['id'],
       name: map['name'],
+      currency: map['currency'],
       balance: map['balance'],
-      orders:
-          List<Order>.from(map['orders']?.map((order) => Order.fromMap(order))),
+      isDefault: map['isDefault'] ?? false,
     );
   }
 }
