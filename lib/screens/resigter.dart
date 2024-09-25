@@ -1,9 +1,9 @@
 import 'package:buybit/data/modal/user.dart';
 import 'package:buybit/data/modal/wallet.dart';
 import 'package:buybit/data/repository/auth_repository.dart';
-import 'package:buybit/data/service/auth_service.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:buybit/data/service/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,7 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
-  final AuthService _authService = AuthService();
+    final AuthService _authService = AuthService();
   final AuthRepository _authRepository = AuthRepository();
   bool _showPassword = true;
   bool _showConfirmPassword = true;
@@ -30,7 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showConfirmPassword = !_showConfirmPassword;
     });
   }
-  bool _passwordChecker(String password) {
+    bool _passwordChecker(String password) {
     final RegExp upper = RegExp(r'[A-Z]');
     final RegExp lower = RegExp(r'[a-z]');
     final RegExp number = RegExp(r'[0-9]');
@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    try {
+        try {
       User? firebaseUser = await _authService.createUserWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
@@ -100,82 +100,186 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushNamedAndRemoveUntil(
-                context, '/login', (route) => false);
-          },
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: _showPassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _showPassword ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: _passwordVisibility,
-                ),
-              ),
-              onChanged: (password) {
-                _checkPasswordStrength(password);
-              },
-            ),
-            if (_passwordStrength != null) ...[
-              const SizedBox(height: 5),
-              Text(
-                'Password Strength: $_passwordStrength',
-                style: TextStyle(
-                  color: _passwordStrength == "Strong"
-                      ? Colors.green
-                      : _passwordStrength == "Moderate"
-                          ? Colors.orange
-                          : Colors.red,
-                ),
-              ),
-            ],
-            const SizedBox(height: 10),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: _showConfirmPassword,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _showConfirmPassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
-                  ),
-                  onPressed: _confirmPasswordVisibility,
-                ),
+      body: Stack(
+        children: [
+          // Background gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0093E9), Color(0xFF80D0C7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _register,
-              child: const Text('Register'),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Logo or Title
+                    const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 32,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        hintText: 'Name',
+                        hintStyle: const TextStyle(
+                          fontSize: 16.0, // Adjust the font size if needed
+                        ),
+                        prefixIcon: const Icon(Icons.person),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Email field
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        hintText: 'Email',
+                        hintStyle: const TextStyle(
+                          fontSize: 16.0, // Adjust the font size if needed
+                        ),
+                        prefixIcon: const Icon(Icons.email),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Password field
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _showPassword,
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: _passwordVisibility,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      onChanged: _checkPasswordStrength,
+                    ),
+                    const SizedBox(height: 10),
+                    // Password strength indicator
+                    if (_passwordStrength != null)
+                      Column(
+                        children: [
+                          LinearProgressIndicator(
+                            value: _passwordStrength == 'Weak'
+                                ? 0.33
+                                : _passwordStrength == 'Moderate'
+                                    ? 0.66
+                                    : 1.0,
+                            backgroundColor: Colors.grey[300],
+                            color: _passwordStrength == 'Strong'
+                                ? Colors.green
+                                : _passwordStrength == 'Moderate'
+                                    ? Colors.orange
+                                    : Colors.red,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Password Strength: $_passwordStrength',
+                            style: TextStyle(
+                              color: _passwordStrength == 'Strong'
+                                  ? Colors.green
+                                  : _passwordStrength == 'Moderate'
+                                      ? Colors.orange
+                                      : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 15),
+                    // Confirm Password field
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: _showConfirmPassword,
+                      decoration: InputDecoration(
+                        hintText: 'Confirm Password',
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _showConfirmPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: _confirmPasswordVisibility,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    // Register Button
+                    ElevatedButton(
+                      onPressed: _register,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16.0,
+                            horizontal: 64.0
+                          ),
+                        backgroundColor: Colors.blue[700],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Back to login link
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/login', (route) => false);
+                      },
+                      child: const Text(
+                        'Already have an account? Login',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
