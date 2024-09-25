@@ -102,7 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -119,7 +118,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // App Logo or Title
                     const Text(
                       'Register',
                       style: TextStyle(
@@ -134,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         hintText: 'Name',
                         hintStyle: const TextStyle(
-                          fontSize: 16.0, // Adjust the font size if needed
+                          fontSize: 16.0,
                         ),
                         prefixIcon: const Icon(Icons.person),
                         filled: true,
@@ -146,13 +144,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    // Email field
                     TextField(
                       controller: _emailController,
                       decoration: InputDecoration(
                         hintText: 'Email',
                         hintStyle: const TextStyle(
-                          fontSize: 16.0, // Adjust the font size if needed
+                          fontSize: 16.0,
                         ),
                         prefixIcon: const Icon(Icons.email),
                         filled: true,
@@ -164,7 +161,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    // Password field
                     TextField(
                       controller: _passwordController,
                       obscureText: _showPassword,
@@ -189,7 +185,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: _checkPasswordStrength,
                     ),
                     const SizedBox(height: 10),
-                    // Password strength indicator
                     if (_passwordStrength != null)
                       Column(
                         children: [
@@ -220,7 +215,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                     const SizedBox(height: 15),
-                    // Confirm Password field
                     TextField(
                       controller: _confirmPasswordController,
                       obscureText: _showConfirmPassword,
@@ -244,7 +238,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Register Button
                     ElevatedButton(
                       onPressed: _register,
                       style: ElevatedButton.styleFrom(
@@ -263,7 +256,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Back to login link
                     TextButton(
                       onPressed: () {
                         Navigator.pushNamedAndRemoveUntil(

@@ -55,7 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // BuyBit logo
                   Container(
                     height: 100,
                     width: 100,
@@ -75,13 +74,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 60),
-                  // Email field
                   TextField(
                     controller: _emailController,
                     decoration: InputDecoration(
                       hintText: 'Email',
                       hintStyle: const TextStyle(
-                          fontSize: 16.0, // Adjust the font size if needed
+                          fontSize: 16.0,
                         ),
                         prefixIcon: const Icon(Icons.person),
                       filled: true,
@@ -93,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Password field
                   TextField(
                     controller: _passwordController,
                     obscureText: _showPassword,
@@ -117,7 +114,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  // Login button
                   ElevatedButton(
                     onPressed: _login,
                     style: ElevatedButton.styleFrom(
@@ -134,7 +130,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 15),
-                  // Register button
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/register');
