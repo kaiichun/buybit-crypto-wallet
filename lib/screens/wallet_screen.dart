@@ -1,11 +1,12 @@
 import 'package:buybit/data/modal/wallet.dart';
+import 'package:buybit/data/modal/wallet_history.dart';
+import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class WalletScreen extends StatefulWidget {
-  const WalletScreen({Key? key}) : super(key: key);
-
+  const WalletScreen({super.key});
   @override
   _WalletScreenState createState() => _WalletScreenState();
 }
@@ -13,6 +14,7 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   final WalletRepository walletRepo = WalletRepository.instance;
   List<Wallet> wallets = [];
+  List<WalletHistory> walletHistories = [];
   Wallet? defaultWallet;
   String selectedFilter = 'All';
 
@@ -20,6 +22,7 @@ class _WalletScreenState extends State<WalletScreen> {
   void initState() {
     super.initState();
     _loadWallets();
+    _loadWalletHistory();
   }
 
   Future<void> _loadWallets() async {
@@ -27,6 +30,53 @@ class _WalletScreenState extends State<WalletScreen> {
     defaultWallet = wallets.firstWhere((wallet) => wallet.isDefault,
         orElse: () => wallets[0]);
     setState(() {});
+  }
+
+  Future<void> _loadWalletHistory() async {
+    try {
+      final wallets = await walletRepo.getAllUserWallets();
+      walletHistories =
+          await WalletHistoryRepository().getAllWalletHistories(wallets);
+      _filterWalletHistory();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load wallet history')),
+      );
+    } finally {
+      setState(() {});
+    }
+  }
+
+  void _filterWalletHistory() {
+    final DateTime now = DateTime.now();
+    final Duration duration;
+
+    switch (selectedFilter) {
+      case '1 Day':
+        duration = const Duration(days: 1);
+        break;
+      case '3 Days':
+        duration = const Duration(days: 3);
+        break;
+      case '7 Days':
+        duration = const Duration(days: 7);
+        break;
+      case '28 Days':
+        duration = const Duration(days: 28);
+        break;
+      case '90 Days':
+        duration = const Duration(days: 90);
+        break;
+      default:
+        walletHistories.sort((a, b) => b.date.compareTo(a.date));
+        return;
+    }
+
+    walletHistories = walletHistories.where((history) {
+      return now.difference(history.date) <= duration;
+    }).toList();
+
+    walletHistories.sort((a, b) => b.date.compareTo(a.date));
   }
 
   void _createWallet(String walletName, String currency) async {
@@ -52,17 +102,35 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       await walletRepo.topUpWallet(walletId, amount);
 
+      final WalletHistory history = WalletHistory(
+        id: UniqueKey().toString(),
+        walletId: walletId,
+        action: 'top-up',
+        amount: amount,
+        date: DateTime.now(),
+      );
+      await WalletHistoryRepository().addHistory(history);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Successfully topped up $amount to the wallet.')),
       );
     } catch (e) {
+      final WalletHistory failedHistory = WalletHistory(
+        id: UniqueKey().toString(),
+        walletId: walletId,
+        action: 'top-up failed',
+        amount: amount,
+        date: DateTime.now(),
+      );
+      await WalletHistoryRepository().addHistory(failedHistory);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to top up wallet: $e')),
+        const SnackBar(content: Text('Failed to top up wallet')),
       );
     } finally {
       _loadWallets();
+      _loadWalletHistory();
     }
   }
 
@@ -70,17 +138,35 @@ class _WalletScreenState extends State<WalletScreen> {
     try {
       await walletRepo.withdrawWallet(walletId, amount);
 
+      final WalletHistory history = WalletHistory(
+        id: UniqueKey().toString(),
+        walletId: walletId,
+        action: 'withdrawal',
+        amount: amount,
+        date: DateTime.now(),
+      );
+      await WalletHistoryRepository().addHistory(history);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Successfully withdrew $amount from the wallet.')),
       );
     } catch (e) {
+      final WalletHistory failedHistory = WalletHistory(
+        id: UniqueKey().toString(),
+        walletId: walletId,
+        action: 'withdrawal failed',
+        amount: amount,
+        date: DateTime.now(),
+      );
+      await WalletHistoryRepository().addHistory(failedHistory);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to withdraw from wallet: $e')),
+        const SnackBar(content: Text('Failed to withdraw from wallet')),
       );
     } finally {
       _loadWallets();
+      _loadWalletHistory();
     }
   }
 
@@ -130,43 +216,40 @@ class _WalletScreenState extends State<WalletScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                          vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center, 
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add, size: 12), 
+                        Icon(Icons.add, size: 12),
                         SizedBox(width: 4),
                         Text(
                           'Top Up',
                           style: TextStyle(
-                            fontSize: 12, 
-                            fontWeight: FontWeight.bold, 
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.send, size: 12),
@@ -182,19 +265,19 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _showWithdrawOptions,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.remove, size: 12),
@@ -214,11 +297,11 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
+            padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Wallets'),
+                const Text('Wallets'),
                 IconButton(
                   onPressed: _displayCreateWallet,
                   icon: const Icon(Icons.add),
@@ -228,7 +311,8 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 0.0, horizontal: 18.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 0.0, horizontal: 18.0),
               itemCount: wallets.length,
               itemBuilder: (context, index) {
                 final wallet = wallets[index];
@@ -240,7 +324,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     _displayEditWallet(wallet);
                   },
                   child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 4.0),
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
@@ -252,7 +336,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       ),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -271,15 +355,15 @@ class _WalletScreenState extends State<WalletScreen> {
                                   Row(
                                     children: [
                                       Text(wallet.id),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       IconButton(
-                                        icon: Icon(Icons.copy),
+                                        icon: const Icon(Icons.copy),
                                         onPressed: () {
                                           Clipboard.setData(
                                               ClipboardData(text: wallet.id));
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
-                                            SnackBar(
+                                            const SnackBar(
                                                 content: Text(
                                                     'Wallet ID copied to clipboard')),
                                           );
@@ -313,6 +397,90 @@ class _WalletScreenState extends State<WalletScreen> {
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('History',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                DropdownButton<String>(
+                  value: selectedFilter,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedFilter = newValue!;
+                      _filterWalletHistory();
+                    });
+                  },
+                  items: <String>[
+                    'All',
+                    '1 Day',
+                    '3 Days',
+                    '7 Days',
+                    '28 Days',
+                    '90 Days'
+                  ].map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
+              itemCount: walletHistories.length,
+              itemBuilder: (context, index) {
+                final history = walletHistories[index];
+                final wallet =
+                    wallets.firstWhere((w) => w.id == history.walletId);
+                return Card(
+                  elevation: 4,
+                  margin: const EdgeInsets.only(bottom: 12.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(history.action.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                )),
+                            Text(
+                              '${history.action == 'top-up' ? '+ ' : '- '}${formatBalance(history.amount)} ${wallet.currency}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: history.action == 'top-up'
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatDateTime(history.date),
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -326,13 +494,13 @@ class _WalletScreenState extends State<WalletScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Create Wallet'),
+          title: const Text('Create Wallet'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(labelText: 'Wallet Name'),
+                decoration: const InputDecoration(labelText: 'Wallet Name'),
               ),
               DropdownButton<String>(
                 value: selectedCurrency,
@@ -353,7 +521,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           actions: [
             TextButton(
-              child: Text('Create'),
+              child: const Text('Create'),
               onPressed: () {
                 _createWallet(nameController.text, selectedCurrency);
                 Navigator.of(context).pop();
@@ -373,14 +541,14 @@ class _WalletScreenState extends State<WalletScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Edit Wallet Name'),
+          title: const Text('Edit Wallet Name'),
           content: TextField(
             controller: nameController,
-            decoration: InputDecoration(labelText: 'Wallet Name'),
+            decoration: const InputDecoration(labelText: 'Wallet Name'),
           ),
           actions: [
             TextButton(
-              child: Text('Save'),
+              child: const Text('Save'),
               onPressed: () {
                 _editWalletName(wallet, nameController.text);
                 Navigator.of(context).pop();
@@ -401,7 +569,7 @@ class _WalletScreenState extends State<WalletScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Select Wallet to Top Up'),
+              title: const Text('Select Wallet to Top Up'),
               content: Container(
                 width: 300,
                 height: 400,
@@ -418,8 +586,9 @@ class _WalletScreenState extends State<WalletScreen> {
                                 });
                               },
                               child: Container(
-                                margin: EdgeInsets.symmetric(vertical: 8.0),
-                                padding: EdgeInsets.all(12.0),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: selectedWallet == wallet
@@ -475,7 +644,7 @@ class _WalletScreenState extends State<WalletScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Text('Select Wallet to Withdraw From'),
+              title: const Text('Select Wallet to Withdraw From'),
               content: Container(
                 width: 300,
                 height: 400,
@@ -550,12 +719,12 @@ class _WalletScreenState extends State<WalletScreen> {
           title: Text('Top Up ${wallet.name}'),
           content: TextField(
             controller: amountController,
-            decoration: InputDecoration(labelText: 'Amount to Top Up'),
+            decoration: const InputDecoration(labelText: 'Amount to Top Up'),
             keyboardType: TextInputType.number,
           ),
           actions: [
             TextButton(
-              child: Text('Top Up (USD)'),
+              child: const Text('Top Up (USD)'),
               onPressed: () {
                 final amount = double.tryParse(amountController.text) ?? 0.0;
                 _topUpWallet(wallet.id, amount);
@@ -583,14 +752,15 @@ class _WalletScreenState extends State<WalletScreen> {
                   'Available Balance (${wallet.currency}): ${formatBalance(wallet.balance)}'),
               TextField(
                 controller: amountController,
-                decoration: InputDecoration(labelText: 'Amount to Withdraw'),
+                decoration:
+                    const InputDecoration(labelText: 'Amount to Withdraw'),
                 keyboardType: TextInputType.number,
               ),
             ],
           ),
           actions: [
             TextButton(
-              child: Text('Withdraw'),
+              child: const Text('Withdraw'),
               onPressed: () {
                 final amount = double.tryParse(amountController.text) ?? 0.0;
                 _withdrawWallet(wallet.id, amount);

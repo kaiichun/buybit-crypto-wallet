@@ -15,6 +15,7 @@ class WalletRepository {
     }
     return _firestore.collection('users/${user.uid}/wallets');
   }
+
   String getUid() {
     final User? user = _auth.currentUser;
     if (user == null) {
@@ -22,6 +23,7 @@ class WalletRepository {
     }
     return user.uid;
   }
+
   Future<void> createWallet(String walletName, String currency) async {
     final newWallet = Wallet(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -31,12 +33,14 @@ class WalletRepository {
     );
     await getCollection().doc(newWallet.id).set(newWallet.toMap());
   }
+
   Future<List<Wallet>> getAllUserWallets() async {
     final response = await getCollection().get();
     return response.docs
         .map((doc) => Wallet.fromMap(doc.data() as Map<String, dynamic>))
         .toList();
   }
+
   Future<void> setDefaultWallet(String walletId) async {
     final wallets = await getAllUserWallets();
     for (var wallet in wallets) {
@@ -45,6 +49,7 @@ class WalletRepository {
           .update({'isDefault': wallet.id == walletId});
     }
   }
+
   Future<void> updateWalletName(String walletId, String newName) async {
     try {
       await getCollection().doc(walletId).update({'name': newName});
@@ -52,14 +57,18 @@ class WalletRepository {
       debugPrint("Failed to update wallet name: $e");
     }
   }
+
   Future<void> topUpWallet(String walletId, double amount) async {
     final walletDoc = await getCollection().doc(walletId).get();
     if (walletDoc.exists) {
       final wallet = Wallet.fromMap(walletDoc.data() as Map<String, dynamic>);
       wallet.balance += amount;
+      wallet.availableBalance += amount;
+
       await getCollection().doc(walletId).update(wallet.toMap());
     }
   }
+
   Future<void> withdrawWallet(String walletId, double amount) async {
     final walletDoc = await getCollection().doc(walletId).get();
     if (walletDoc.exists) {
