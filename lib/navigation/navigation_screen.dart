@@ -1,6 +1,7 @@
 import 'package:buybit/screens/home_screen.dart';
 import 'package:buybit/screens/market_screen.dart';
 import 'package:buybit/navigation/navigation_bottom_bar_screen.dart';
+import 'package:buybit/screens/order_screen.dart';
 import 'package:buybit/screens/wallet_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   static const List<Widget> _pages = <Widget>[
     HomeScreen(),
     MarketScreen(),
+    OrderScreen(),
     WalletScreen(),
   ];
 
@@ -29,7 +31,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_selectedIndex], 
+      body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBottomBarScreen(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemTapped,

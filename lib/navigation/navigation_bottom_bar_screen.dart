@@ -4,11 +4,8 @@ class NavigationBottomBarScreen extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onItemSelected;
 
-  const NavigationBottomBarScreen({
-    required this.selectedIndex,
-    required this.onItemSelected,
-    Key? key,
-  }) : super(key: key);
+  const NavigationBottomBarScreen(
+      {required this.selectedIndex, required this.onItemSelected, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +18,10 @@ class NavigationBottomBarScreen extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.show_chart),
           label: 'Market',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.airplane_ticket_outlined),
+          label: 'Order',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.account_balance_wallet),
