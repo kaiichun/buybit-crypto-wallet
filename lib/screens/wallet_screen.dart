@@ -1,9 +1,11 @@
 import 'package:buybit/data/modal/wallet.dart';
 import 'package:buybit/data/modal/wallet_history.dart';
+import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -12,6 +14,7 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  late WalletProvider walletProvider;
   final WalletRepository walletRepo = WalletRepository.instance;
   List<Wallet> wallets = [];
   List<WalletHistory> walletHistories = [];
@@ -23,6 +26,13 @@ class _WalletScreenState extends State<WalletScreen> {
     super.initState();
     _loadWallets();
     _loadWalletHistory();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    walletProvider = Provider.of<WalletProvider>(context);
+    _loadWallets();
   }
 
   Future<void> _loadWallets() async {
@@ -185,6 +195,7 @@ class _WalletScreenState extends State<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    walletProvider = Provider.of<WalletProvider>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
@@ -206,7 +217,39 @@ class _WalletScreenState extends State<WalletScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(18.0, 24.0, 18.0, 0.0),
+            padding: const EdgeInsets.fromLTRB(18.0, 12.0, 18.0, 0.0),
+            child: Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Total Balance (USD)',
+                        style: TextStyle(fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Consumer<WalletProvider>(
+                      builder: (context, walletProvider, child) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              formatBalance(
+                                  walletProvider.calculateTotalBalance()),
+                              style: const TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -280,13 +323,13 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.remove, size: 12),
+                        Icon(Icons.remove, size: 12), // Icon size set to 8
                         SizedBox(width: 4),
                         Text(
                           'Withdraw',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 12, // Text size set to 8
+                            fontWeight: FontWeight.bold, // Bold text
                           ),
                         ),
                       ],
@@ -297,7 +340,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
+            padding: EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -311,8 +354,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           Expanded(
             child: ListView.builder(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 0.0, horizontal: 18.0),
+              padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
               itemCount: wallets.length,
               itemBuilder: (context, index) {
                 final wallet = wallets[index];
@@ -397,6 +439,8 @@ class _WalletScreenState extends State<WalletScreen> {
               },
             ),
           ),
+
+          // History Header with Dropdown
           Padding(
             padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
             child: Row(
@@ -430,6 +474,7 @@ class _WalletScreenState extends State<WalletScreen> {
               ],
             ),
           ),
+
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
@@ -661,8 +706,9 @@ class _WalletScreenState extends State<WalletScreen> {
                                 });
                               },
                               child: Container(
-                                margin: EdgeInsets.symmetric(vertical: 8.0),
-                                padding: EdgeInsets.all(12.0),
+                                margin:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                padding: const EdgeInsets.all(12.0),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: selectedWallet == wallet

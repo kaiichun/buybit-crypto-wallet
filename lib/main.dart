@@ -1,32 +1,51 @@
+import 'package:buybit/data/api/auth_service.dart';
+import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/navigation/navigation_screen.dart';
 import 'package:buybit/screens/login_screen.dart';
 import 'package:buybit/screens/resigter.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(const BuyBitApp());
 }
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+
+class BuyBitApp extends StatelessWidget {
+  const BuyBitApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BuyBit',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthService>(
+          create: (_) => AuthService(),
+        ),
+        ChangeNotifierProvider<WalletProvider>(
+          create: (_) => WalletProvider(),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'BuyBit',
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: Consumer<AuthService>(
+          builder: (context, authService, _) {
+            return authService.isLoggedIn()
+                ? const NavigationScreen()
+                : const LoginScreen();
+          },
+        ),
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/main': (context) => const NavigationScreen(),
+        },
       ),
-      home: FirebaseAuth.instance.currentUser == null ? const LoginScreen() : const NavigationScreen(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-         '/main': (context) => const NavigationScreen(),
-      },
     );
   }
 }
