@@ -30,6 +30,7 @@ class NavigationBottomBarScreen extends StatelessWidget {
       ],
       currentIndex: selectedIndex,
       selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black,
       onTap: onItemSelected,
     );
   }
