@@ -18,7 +18,7 @@ class _OrderScreenState extends State<OrderScreen> {
               Text(
                 'Order',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color.fromARGB(255, 41, 41, 41),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
