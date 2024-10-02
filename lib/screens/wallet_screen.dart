@@ -201,12 +201,15 @@ class _WalletScreenState extends State<WalletScreen> {
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
         title: const Row(
           children: [
-            Icon(Icons.wallet, color: Colors.white),
+            Icon(
+              Icons.wallet,
+              color: Color.fromARGB(255, 41, 41, 41),
+            ),
             SizedBox(width: 8),
             Text(
               'My Account',
               style: TextStyle(
-                color: Colors.white,
+                color: Color.fromARGB(255, 41, 41, 41),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -323,13 +326,13 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.remove, size: 12), // Icon size set to 8
+                        Icon(Icons.remove, size: 12),
                         SizedBox(width: 4),
                         Text(
                           'Withdraw',
                           style: TextStyle(
-                            fontSize: 12, // Text size set to 8
-                            fontWeight: FontWeight.bold, // Bold text
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
@@ -340,7 +343,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
+            padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -497,17 +500,21 @@ class _WalletScreenState extends State<WalletScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(history.action.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                )),
                             Text(
-                              '${history.action == 'top-up' ? '+ ' : '- '}${formatBalance(history.amount)} ${wallet.currency}',
+                              history.action.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${history.action == 'top-up' || history.action == 'profit' || history.action == 'takeprofit' ? '+ ' : '- '}${formatBalance(history.amount)} ${wallet.currency}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
-                                color: history.action == 'top-up'
+                                color: history.action == 'top-up' ||
+                                        history.action == 'profit' ||
+                                        history.action == 'takeprofit'
                                     ? Colors.green
                                     : Colors.red,
                               ),

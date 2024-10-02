@@ -1,5 +1,4 @@
 import 'package:buybit/data/modal/user.dart';
-import 'package:buybit/data/modal/wallet.dart';
 import 'package:buybit/data/repository/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +9,13 @@ class RegisterScreen extends StatefulWidget {
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
+
 class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
-    final AuthService _authService = AuthService();
+  final AuthService _authService = AuthService();
   final AuthRepository _authRepository = AuthRepository();
   bool _showPassword = true;
   bool _showConfirmPassword = true;
@@ -25,12 +25,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showPassword = !_showPassword;
     });
   }
+
   void _confirmPasswordVisibility() {
     setState(() {
       _showConfirmPassword = !_showConfirmPassword;
     });
   }
-    bool _passwordChecker(String password) {
+
+  bool _passwordChecker(String password) {
     final RegExp upper = RegExp(r'[A-Z]');
     final RegExp lower = RegExp(r'[a-z]');
     final RegExp number = RegExp(r'[0-9]');
@@ -40,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         number.hasMatch(password) &&
         special.hasMatch(password);
   }
+
   void _checkPasswordStrength(String password) {
     if (password.isEmpty) {
       setState(() {
@@ -64,6 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
     }
   }
+
   Future<void> _register() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,18 +75,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-        try {
+    try {
       User? firebaseUser = await _authService.createUserWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
       );
       if (firebaseUser != null) {
-        List<Wallet> wallets = [];
         BuyBitUser newUser = BuyBitUser(
           id: firebaseUser.uid,
           name: _nameController.text,
           email: firebaseUser.email!,
-          wallets: wallets,
         );
         await _authRepository.createUser(newUser);
         Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
@@ -97,6 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,9 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: _register,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 16.0,
-                            horizontal: 64.0
-                          ),
+                            vertical: 16.0, horizontal: 64.0),
                         backgroundColor: Colors.blue[700],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30.0),

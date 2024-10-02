@@ -8,6 +8,7 @@ class WalletRepository {
   WalletRepository._init();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   CollectionReference getCollection() {
     final User? user = _auth.currentUser;
     if (user == null) {
@@ -41,6 +42,14 @@ class WalletRepository {
         .toList();
   }
 
+  Future<Wallet> getWalletById(String walletId) async {
+    final docSnapshot = await getCollection().doc(walletId).get();
+    if (!docSnapshot.exists) {
+      throw Exception("Wallet not found");
+    }
+    return Wallet.fromMap(docSnapshot.data() as Map<String, dynamic>);
+  }
+
   Future<void> setDefaultWallet(String walletId) async {
     final wallets = await getAllUserWallets();
     for (var wallet in wallets) {
@@ -58,12 +67,25 @@ class WalletRepository {
     }
   }
 
+  Future<void> updateWalletBalance(String walletId, double amount) async {
+    final walletDoc = await getCollection().doc(walletId).get();
+    if (walletDoc.exists) {
+      final wallet = Wallet.fromMap(walletDoc.data() as Map<String, dynamic>);
+      if (wallet.balance >= amount) {
+        wallet.balance -= amount;
+
+        await getCollection().doc(walletId).update(wallet.toMap());
+      } else {
+        throw Exception('not available balance for this order.');
+      }
+    }
+  }
+
   Future<void> topUpWallet(String walletId, double amount) async {
     final walletDoc = await getCollection().doc(walletId).get();
     if (walletDoc.exists) {
       final wallet = Wallet.fromMap(walletDoc.data() as Map<String, dynamic>);
       wallet.balance += amount;
-      wallet.availableBalance += amount;
 
       await getCollection().doc(walletId).update(wallet.toMap());
     }

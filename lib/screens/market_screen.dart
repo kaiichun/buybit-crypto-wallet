@@ -1,45 +1,71 @@
 import 'package:buybit/data/api/api_service.dart';
 import 'package:buybit/data/modal/coin.dart';
+import 'package:buybit/screens/market_coin_detail_screen.dart';
 import 'package:flutter/material.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
+
   @override
   _MarketScreenState createState() => _MarketScreenState();
 }
 
 class _MarketScreenState extends State<MarketScreen> {
-  late Future<List<Coin>> _futureCoins;
   final ApiService _apiService = ApiService();
   TextEditingController searchBarController = TextEditingController();
   List<Coin> _filteredCoins = [];
   List<Coin> _allCoins = [];
+  String _currentQuery = "";
+
   @override
   void initState() {
     super.initState();
-    _futureCoins = _apiService.fetchCoins();
+
+    _apiService.streamRealTimePrices().listen((coinList) {
+      if (_currentQuery.isEmpty) {
+        setState(() {
+          _allCoins =
+              coinList.where((coin) => coin.symbol.endsWith('USDT')).toList();
+          _filteredCoins = _allCoins;
+        });
+      }
+    });
+
     searchBarController.addListener(_filterCoins);
   }
+
   @override
   void dispose() {
+    _apiService.closeWebSocket();
     searchBarController.dispose();
     super.dispose();
   }
+
   void _filterCoins() {
-    String query = searchBarController.text.toLowerCase();
-    setState(() {
-      _filteredCoins = _allCoins.where((coin) {
-        return coin.name.toLowerCase().contains(query)|| coin.symbol.toLowerCase().contains(query);
-      }).toList();
-    });
+    String query = searchBarController.text.toLowerCase().trim();
+    _currentQuery = query;
+
+    if (query.isEmpty) {
+      setState(() {
+        _filteredCoins = _allCoins;
+      });
+    } else {
+      setState(() {
+        _filteredCoins = _allCoins.where((coin) {
+          return coin.symbol.toLowerCase().contains(query);
+        }).toList();
+      });
+    }
   }
+
   String formatPrice(double price) {
-    if (price < 1) {
+    if (price < 0) {
       return '\$${price.toString()}';
     } else {
       return '\$${price.toStringAsFixed(2)}';
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,12 +74,15 @@ class _MarketScreenState extends State<MarketScreen> {
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
         title: const Row(
           children: [
-            Icon(Icons.bar_chart, color: Colors.white),
+            Icon(
+              Icons.currency_exchange,
+              color: Color.fromARGB(255, 41, 41, 41),
+            ),
             SizedBox(width: 8),
             Text(
               'Market',
               style: TextStyle(
-                color: Colors.white,
+                color: Color.fromARGB(255, 41, 41, 41),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -64,100 +93,92 @@ class _MarketScreenState extends State<MarketScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            padding: const EdgeInsets.all(12.0),
             child: TextField(
               controller: searchBarController,
               decoration: InputDecoration(
-                hintText: 'Search coin',
+                hintText: 'Search coin...',
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: const BorderSide(color: Colors.blue),
                 ),
-                prefixIcon: const Icon(Icons.search),
               ),
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Coin>>(
-              future: _futureCoins,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Loading data, please wait...'),
-                      ],
-                    ),
-                  );
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No data found'));
-                } else {
-                  _allCoins = snapshot.data!;
-                  _filteredCoins =
-                      _filteredCoins.isNotEmpty ? _filteredCoins : _allCoins;
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
+            child: _filteredCoins.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     itemCount: _filteredCoins.length,
                     itemBuilder: (context, index) {
                       final coin = _filteredCoins[index];
-                      return marketItem(
-                        coin.symbol.toUpperCase(),
-                        coin.name,
-                        formatPrice(coin.currentPrice),
-                        '${coin.priceChangePercentage24h.toStringAsFixed(2)}%',
-                        coin.priceChangePercentage24h >= 0,
-                        coin.imageUrl,
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MarketCoinDetailScreen(coinId: coin.symbol),
+                            ),
+                          );
+                        },
+                        child: coinItemCard(
+                          coin.symbol.toUpperCase(),
+                          formatPrice(coin.lastPrice),
+                          ' ${coin.priceChangePercentage24h.toStringAsFixed(2)}% ',
+                          coin.priceChangePercentage24h >= 0,
+                          '${coin.volume.toStringAsFixed(2)}M',
+                        ),
                       );
-                    },
-                  );
-                }
-              },
-            ),
+                    }),
           ),
         ],
       ),
     );
   }
-  Widget marketItem(String pair, String name, String price, String percentage,
-      bool isPositive, String imageUrl) {
-    String letTextBecomeDot(String text, int wordLimit) {
-      List<String> words = text.split(' ');
-      if (words.length > wordLimit) {
-        return words.take(wordLimit).join(' ') + '...';
-      } else {
-        return text;
-      }
-    }
+
+  Widget coinItemCard(
+    String symbol,
+    String price,
+    String percentage,
+    bool isPositive,
+    String volume,
+  ) {
     return Card(
+      color: const Color.fromARGB(255, 245, 245, 245),
       elevation: 2,
-      color: const Color.fromARGB(255, 240, 240, 240),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      margin: const EdgeInsets.symmetric(vertical: 6.0),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Image.network(
-                  imageUrl,
-                  height: 40,
-                  width: 40,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.error, size: 40);
-                  },
-                ),
-                const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(pair,
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text(letTextBecomeDot(name, 2)),
+                    Text(
+                      symbol.toUpperCase(),
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 0, 0, 0),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '$volume USDT',
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 132, 132, 132),
+                        fontSize: 14,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -165,21 +186,30 @@ class _MarketScreenState extends State<MarketScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(price,
+                Text(
+                  price,
+                  style: const TextStyle(
+                    color: Color.fromARGB(255, 0, 0, 0),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isPositive ? Colors.green : Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    percentage,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
-                Row(
-                  children: [
-                    Icon(
-                      isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: isPositive ? Colors.green : Colors.red,
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      percentage,
-                      style: TextStyle(
-                          color: isPositive ? Colors.green : Colors.red),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -29,12 +30,15 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
         title: const Row(
           children: [
-            Icon(Icons.currency_bitcoin, color: Colors.white),
+            Icon(
+              Icons.currency_bitcoin,
+              color: Color.fromARGB(255, 41, 41, 41),
+            ),
             SizedBox(width: 4),
             Text(
               'BuyBit',
               style: TextStyle(
-                color: Colors.white,
+                color: Color.fromARGB(255, 41, 41, 41),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -45,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(
               Icons.logout,
-              color: Colors.white,
+              color: Color.fromARGB(255, 41, 41, 41),
             ),
             onPressed: _logout,
           ),
