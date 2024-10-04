@@ -20,6 +20,14 @@ class ApiService {
     }
   }
 
+  Stream<double> getCurrentPriceStream(String symbol) async* {
+    while (true) {
+      final price = await getCurrentPrice(symbol);
+      yield price;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+  }
+
   Stream<List<Coin>> streamRealTimePrices() {
     _channel = WebSocketChannel.connect(
       Uri.parse('wss://stream.binance.com:9443/ws/!ticker@arr'),

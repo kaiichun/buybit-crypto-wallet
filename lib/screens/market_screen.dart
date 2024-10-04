@@ -1,26 +1,24 @@
 import 'package:buybit/data/api/api_service.dart';
 import 'package:buybit/data/modal/coin.dart';
+import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/screens/market_coin_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
-
   @override
   _MarketScreenState createState() => _MarketScreenState();
 }
-
 class _MarketScreenState extends State<MarketScreen> {
   final ApiService _apiService = ApiService();
   TextEditingController searchBarController = TextEditingController();
   List<Coin> _filteredCoins = [];
   List<Coin> _allCoins = [];
   String _currentQuery = "";
-
   @override
   void initState() {
     super.initState();
-
     _apiService.streamRealTimePrices().listen((coinList) {
       if (_currentQuery.isEmpty) {
         setState(() {
@@ -30,21 +28,18 @@ class _MarketScreenState extends State<MarketScreen> {
         });
       }
     });
-
     searchBarController.addListener(_filterCoins);
+    Provider.of<FavoriteCoinProvider>(context, listen: false).loadFavorites();
   }
-
   @override
   void dispose() {
     _apiService.closeWebSocket();
     searchBarController.dispose();
     super.dispose();
   }
-
   void _filterCoins() {
     String query = searchBarController.text.toLowerCase().trim();
     _currentQuery = query;
-
     if (query.isEmpty) {
       setState(() {
         _filteredCoins = _allCoins;
@@ -57,7 +52,6 @@ class _MarketScreenState extends State<MarketScreen> {
       });
     }
   }
-
   String formatPrice(double price) {
     if (price < 0) {
       return '\$${price.toString()}';
@@ -65,7 +59,6 @@ class _MarketScreenState extends State<MarketScreen> {
       return '\$${price.toStringAsFixed(2)}';
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,42 +102,53 @@ class _MarketScreenState extends State<MarketScreen> {
           Expanded(
             child: _filteredCoins.isEmpty
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    itemCount: _filteredCoins.length,
-                    itemBuilder: (context, index) {
-                      final coin = _filteredCoins[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  MarketCoinDetailScreen(coinId: coin.symbol),
+                : Consumer<FavoriteCoinProvider>(
+                    builder: (context, favoriteProvider, child) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        itemCount: _filteredCoins.length,
+                        itemBuilder: (context, index) {
+                          final coin = _filteredCoins[index];
+                          final isFavorite = favoriteProvider.isFavorite(coin);
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MarketCoinDetailScreen(coinId: coin.symbol),
+                                ),
+                              );
+                            },
+                            child: coinItemCard(
+                              coin.symbol.toUpperCase(),
+                              formatPrice(coin.lastPrice),
+                              ' ${coin.priceChangePercentage24h.toStringAsFixed(2)}% ',
+                              coin.priceChangePercentage24h >= 0,
+                              '${coin.volume.toStringAsFixed(2)}M',
+                              isFavorite,
+                              () {
+                                favoriteProvider.toggleFavorite(coin);
+                              },
                             ),
                           );
                         },
-                        child: coinItemCard(
-                          coin.symbol.toUpperCase(),
-                          formatPrice(coin.lastPrice),
-                          ' ${coin.priceChangePercentage24h.toStringAsFixed(2)}% ',
-                          coin.priceChangePercentage24h >= 0,
-                          '${coin.volume.toStringAsFixed(2)}M',
-                        ),
                       );
-                    }),
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
-
-  Widget coinItemCard(
+    Widget coinItemCard(
     String symbol,
     String price,
     String percentage,
     bool isPositive,
     String volume,
+    bool isFavorite,
+    VoidCallback onFavoriteToggle,
   ) {
     return Card(
       color: const Color.fromARGB(255, 245, 245, 245),
@@ -158,60 +162,69 @@ class _MarketScreenState extends State<MarketScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      symbol.toUpperCase(),
-                      style: const TextStyle(
-                        color: Color.fromARGB(255, 0, 0, 0),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      '$volume USDT',
-                      style: const TextStyle(
-                        color: Color.fromARGB(255, 132, 132, 132),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            IconButton(
+              icon: Icon(
+                isFavorite ? Icons.star : Icons.star_border,
+                color: isFavorite ? Colors.yellow : Colors.grey,
+              ),
+              onPressed: onFavoriteToggle,
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  price,
-                  style: const TextStyle(
-                    color: Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        symbol,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 0, 0, 0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '$volume USDT',
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 132, 132, 132),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 5),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isPositive ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(4),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        price,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 0, 0, 0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isPositive ? Colors.green : Colors.red,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          percentage,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    percentage,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

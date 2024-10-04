@@ -1,4 +1,5 @@
 import 'package:buybit/data/api/auth_service.dart';
+import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/navigation/navigation_screen.dart';
 import 'package:buybit/screens/login_screen.dart';
@@ -7,13 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const BuyBitApp());
 }
-
 class BuyBitApp extends StatelessWidget {
   const BuyBitApp({super.key});
   @override
@@ -25,6 +24,9 @@ class BuyBitApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<WalletProvider>(
           create: (_) => WalletProvider(),
+        ),
+        ChangeNotifierProvider<FavoriteCoinProvider>(
+          create: (_) => FavoriteCoinProvider(),
         ),
       ],
       child: MaterialApp(

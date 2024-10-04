@@ -1,5 +1,8 @@
+import 'package:buybit/data/api/api_service.dart';
+import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/service/auth_service.dart';
+import 'package:buybit/screens/market_coin_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
+  final ApiService _apiService = ApiService();
   late WalletProvider walletProvider;
 
   void _logout() {
@@ -94,6 +98,65 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
+           const Padding(
+              padding: EdgeInsets.only(left: 4.0),
+              child: Text(
+                'Favorite Coins',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Consumer<FavoriteCoinProvider>(
+              builder: (context, favoritesProvider, child) {
+                final favoriteCoins = favoritesProvider.favoriteIds;
+                if (favoriteCoins.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'No favorite coins added yet!',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: favoriteCoins.length,
+                  itemBuilder: (context, index) {
+                    final coinSymbol = favoriteCoins[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      elevation: 2,
+                      child: ListTile(
+                        leading: const Icon(Icons.attach_money),
+                        title: Text(coinSymbol),
+                        subtitle: StreamBuilder<double>(
+                          stream: _apiService.getCurrentPriceStream(coinSymbol),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Text('Loading...');
+                            } else if (snapshot.hasError) {
+                              return const Text('Error fetching price');
+                            } else {
+                              final livePrice = snapshot.data ?? 0.0;
+                              return Text('Live Price: \$${livePrice.toStringAsFixed(2)}');
+                            }
+                          },
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => MarketCoinDetailScreen(coinId: coinSymbol),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
