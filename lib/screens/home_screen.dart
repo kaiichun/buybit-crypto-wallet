@@ -1,8 +1,8 @@
 import 'package:buybit/data/api/api_service.dart';
+import 'package:buybit/data/api/auth_service.dart';
 import 'package:buybit/data/modal/coin.dart';
 import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
-import 'package:buybit/data/service/auth_service.dart';
 import 'package:buybit/screens/market_coin_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

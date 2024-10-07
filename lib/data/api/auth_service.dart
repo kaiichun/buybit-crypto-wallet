@@ -1,25 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _user;
-
-  AuthService() {
-    _user = _auth.currentUser;
-    _auth.authStateChanges().listen((User? user) {
-      _user = user;
-      notifyListeners();
-    });
-  }
-
-  User? getCurrentUser() {
-    return _user;
-  }
-
-  bool isLoggedIn() {
-    return _user != null;
-  }
 
   Future<User?> createUserWithEmailAndPassword(
       String email, String password) async {
@@ -29,11 +12,13 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
-      _user = userCredential.user;
-      notifyListeners();
-      return _user;
+
+      // Send verification email
+      await userCredential.user?.sendEmailVerification();
+
+      return userCredential.user;
     } catch (e) {
-      debugPrint('Error creating user');
+      debugPrint('Error creating user: $e');
       return null;
     }
   }
@@ -44,22 +29,34 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
-      _user = userCredential.user;
-      notifyListeners();
-      return _user;
+      return userCredential.user;
     } catch (e) {
-      debugPrint('Error logging in');
+      debugPrint('Error logging in: $e');
       return null;
     }
   }
 
-  void logout() async {
-    await _auth.signOut();
-    _user = null;
-    notifyListeners();
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      debugPrint('Error sending password reset email: $e');
+    }
+  }
+
+  bool isLoggedIn() {
+    return _auth.currentUser != null;
+  }
+
+  void logout() {
+    _auth.signOut();
+  }
+
+  User? getCurrentUser() {
+    return _auth.currentUser;
   }
 
   String? getUid() {
-    return _user?.uid;
+    return _auth.currentUser?.uid;
   }
 }

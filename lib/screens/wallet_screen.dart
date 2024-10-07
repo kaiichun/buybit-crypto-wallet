@@ -3,7 +3,7 @@ import 'package:buybit/data/modal/wallet_history.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
-import 'package:buybit/data/service/notification.dart';
+import 'package:buybit/data/api/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';

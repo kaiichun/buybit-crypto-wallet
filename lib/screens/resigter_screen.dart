@@ -1,8 +1,8 @@
+import 'package:buybit/data/api/auth_service.dart';
 import 'package:buybit/data/modal/user.dart';
 import 'package:buybit/data/repository/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:buybit/data/service/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -87,7 +87,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           email: firebaseUser.email!,
         );
         await _authRepository.createUser(newUser);
-        Navigator.pushNamedAndRemoveUntil(context, '/main', (route) => false);
+        // Navigate to VerifyScreen
+        Navigator.pushNamed(context, '/verify');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration failed')),
