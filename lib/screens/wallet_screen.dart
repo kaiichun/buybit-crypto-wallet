@@ -3,6 +3,7 @@ import 'package:buybit/data/modal/wallet_history.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
+import 'package:buybit/data/service/notification.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -19,30 +20,47 @@ class _WalletScreenState extends State<WalletScreen> {
   List<Wallet> wallets = [];
   List<WalletHistory> walletHistories = [];
   Wallet? defaultWallet;
+  late NotificationService notificationService;
   String selectedFilter = 'All';
+  bool isWalletsLoading = true;
+  bool isHistoryLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadWallets();
     _loadWalletHistory();
+    notificationService = NotificationService();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     walletProvider = Provider.of<WalletProvider>(context);
-    _loadWallets();
+    walletProvider.fetchWallets();
   }
 
   Future<void> _loadWallets() async {
-    wallets = await walletRepo.getAllUserWallets();
-    defaultWallet = wallets.firstWhere((wallet) => wallet.isDefault,
-        orElse: () => wallets[0]);
-    setState(() {});
+    setState(() {
+      isWalletsLoading = true;
+    });
+    try {
+      wallets = await walletRepo.getAllUserWallets();
+      defaultWallet = wallets.firstWhere((wallet) => wallet.isDefault,
+          orElse: () => wallets[0]);
+    } catch (e) {
+      debugPrint("$e");
+    } finally {
+      setState(() {
+        isWalletsLoading = false;
+      });
+    }
   }
 
   Future<void> _loadWalletHistory() async {
+    setState(() {
+      isHistoryLoading = true;
+    });
     try {
       final wallets = await walletRepo.getAllUserWallets();
       walletHistories =
@@ -53,7 +71,9 @@ class _WalletScreenState extends State<WalletScreen> {
         const SnackBar(content: Text('Failed to load wallet history')),
       );
     } finally {
-      setState(() {});
+      setState(() {
+        isHistoryLoading = false;
+      });
     }
   }
 
@@ -121,9 +141,10 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       await WalletHistoryRepository().addHistory(history);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Successfully topped up $amount to the wallet.')),
+      // Show success notification
+      await notificationService.showNotification(
+        'Top-Up Successful',
+        'Successfully top up ${formatBalance(amount)} to wallet.',
       );
     } catch (e) {
       final WalletHistory failedHistory = WalletHistory(
@@ -135,8 +156,9 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       await WalletHistoryRepository().addHistory(failedHistory);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to top up wallet')),
+      await notificationService.showNotification(
+        'Top-Up Failed',
+        'Failed to top up ${formatBalance(amount)} to the wallet.',
       );
     } finally {
       _loadWallets();
@@ -157,9 +179,9 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       await WalletHistoryRepository().addHistory(history);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Successfully withdrew $amount from the wallet.')),
+      await notificationService.showNotification(
+        'Withdrawal Successful',
+        'Successfully withdraw ${formatBalance(amount)} from the wallet.',
       );
     } catch (e) {
       final WalletHistory failedHistory = WalletHistory(
@@ -171,8 +193,9 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       await WalletHistoryRepository().addHistory(failedHistory);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to withdraw from wallet')),
+      await notificationService.showNotification(
+        'Withdrawal Failed',
+        'Failed to withdraw ${formatBalance(amount)} from the wallet.',
       );
     } finally {
       _loadWallets();
@@ -220,7 +243,7 @@ class _WalletScreenState extends State<WalletScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(18.0, 12.0, 18.0, 0.0),
+            padding: const EdgeInsets.fromLTRB(14.0, 12.0, 14.0, 0.0),
             child: Card(
               elevation: 2,
               child: Padding(
@@ -233,14 +256,21 @@ class _WalletScreenState extends State<WalletScreen> {
                     const SizedBox(height: 2),
                     Consumer<WalletProvider>(
                       builder: (context, walletProvider, child) {
+                        final isWalletsEmpty = walletProvider.wallets.isEmpty;
+                        final totalBalance =
+                            walletProvider.calculateTotalBalance();
+
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              formatBalance(
-                                  walletProvider.calculateTotalBalance()),
+                              isWalletsEmpty
+                                  ? "0.00"
+                                  : formatBalance(totalBalance),
                               style: const TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.bold),
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         );
@@ -355,95 +385,111 @@ class _WalletScreenState extends State<WalletScreen> {
               ],
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
-              itemCount: wallets.length,
-              itemBuilder: (context, index) {
-                final wallet = wallets[index];
-                return GestureDetector(
-                  onDoubleTap: () {
-                    _setDefaultWallet(wallet);
-                  },
-                  onLongPress: () {
-                    _displayEditWallet(wallet);
-                  },
-                  child: Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
-                      side: BorderSide(
-                        color: wallet.isDefault
-                            ? Colors.green
-                            : const Color.fromARGB(255, 193, 193, 193),
-                        width: wallet.isDefault ? 3 : 0,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: ListTile(
-                              title: Text(
-                                wallet.name,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(wallet.id),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: const Icon(Icons.copy),
-                                        onPressed: () {
-                                          Clipboard.setData(
-                                              ClipboardData(text: wallet.id));
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                                content: Text(
-                                                    'Wallet ID copied to clipboard')),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                      'Balance (${wallet.currency}): ${formatBalance(wallet.balance)}'),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (wallet.isDefault)
-                            const Padding(
-                              padding: EdgeInsets.only(right: 12.0),
-                              child: Text(
-                                'Default',
-                                style: TextStyle(
-                                  color: Color.fromRGBO(76, 175, 80, 1),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+          isWalletsLoading
+              ? const Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
+                        Text(
+                          "Wallet is loading",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-
-          // History Header with Dropdown
+                )
+              : Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
+                    itemCount: wallets.length,
+                    itemBuilder: (context, index) {
+                      final wallet = wallets[index];
+                      return GestureDetector(
+                        onDoubleTap: () {
+                          _setDefaultWallet(wallet);
+                        },
+                        onLongPress: () {
+                          _displayEditWallet(wallet);
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            side: BorderSide(
+                              color: wallet.isDefault
+                                  ? Colors.green
+                                  : const Color.fromARGB(255, 193, 193, 193),
+                              width: wallet.isDefault ? 3 : 0,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: ListTile(
+                                    title: Text(
+                                      wallet.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(wallet.id),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.copy),
+                                              onPressed: () {
+                                                Clipboard.setData(ClipboardData(
+                                                    text: wallet.id));
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  const SnackBar(
+                                                      content: Text(
+                                                          'Wallet ID copied to clipboard')),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                            'Balance (${wallet.currency}): ${formatBalance(wallet.balance)}'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                if (wallet.isDefault)
+                                  const Padding(
+                                    padding: EdgeInsets.only(right: 12.0),
+                                    child: Text(
+                                      'Default',
+                                      style: TextStyle(
+                                        color: Color.fromRGBO(76, 175, 80, 1),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
             child: Row(
@@ -477,62 +523,79 @@ class _WalletScreenState extends State<WalletScreen> {
               ],
             ),
           ),
-
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
-              itemCount: walletHistories.length,
-              itemBuilder: (context, index) {
-                final history = walletHistories[index];
-                final wallet =
-                    wallets.firstWhere((w) => w.id == history.walletId);
-                return Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.only(bottom: 12.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+          isHistoryLoading
+              ? const Expanded(
+                  child: Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              history.action.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              '${history.action == 'top-up' || history.action == 'profit' || history.action == 'takeprofit' ? '+ ' : '- '}${formatBalance(history.amount)} ${wallet.currency}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: history.action == 'top-up' ||
-                                        history.action == 'profit' ||
-                                        history.action == 'takeprofit'
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
+                        CircularProgressIndicator(),
+                        SizedBox(height: 8),
                         Text(
-                          formatDateTime(history.date),
-                          style: TextStyle(color: Colors.grey[600]),
+                          "History is loading",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-          ),
+                )
+              : Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
+                    itemCount: walletHistories.length,
+                    itemBuilder: (context, index) {
+                      final history = walletHistories[index];
+                      final wallet =
+                          wallets.firstWhere((w) => w.id == history.walletId);
+                      return Card(
+                        elevation: 4,
+                        margin: const EdgeInsets.only(bottom: 12.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    history.action.toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${history.action == 'top-up' || history.action == 'profit' || history.action == 'takeprofit' ? '+ ' : '- '}${formatBalance(history.amount)} ${wallet.currency}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: history.action == 'top-up' ||
+                                              history.action == 'profit' ||
+                                              history.action == 'takeprofit'
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                formatDateTime(history.date),
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
         ],
       ),
     );
@@ -639,13 +702,16 @@ class _WalletScreenState extends State<WalletScreen> {
                               },
                               child: Container(
                                 margin:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                padding: const EdgeInsets.all(12.0),
+                                    const EdgeInsets.symmetric(vertical: 6.0),
+                                padding: const EdgeInsets.fromLTRB(
+                                    8.0, 2.0, 14.0, 2.0),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: selectedWallet == wallet
                                         ? Colors.green
-                                        : Colors.grey,
+                                        : const Color.fromARGB(
+                                            255, 221, 221, 221),
+                                    width: selectedWallet == wallet ? 2 : 2,
                                   ),
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),
@@ -714,13 +780,16 @@ class _WalletScreenState extends State<WalletScreen> {
                               },
                               child: Container(
                                 margin:
-                                    const EdgeInsets.symmetric(vertical: 8.0),
-                                padding: const EdgeInsets.all(12.0),
+                                    const EdgeInsets.symmetric(vertical: 6.0),
+                                padding: const EdgeInsets.fromLTRB(
+                                    8.0, 2.0, 14.0, 2.0),
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                     color: selectedWallet == wallet
                                         ? Colors.green
-                                        : Colors.grey,
+                                        : const Color.fromARGB(
+                                            255, 221, 221, 221),
+                                    width: selectedWallet == wallet ? 2 : 2,
                                   ),
                                   borderRadius: BorderRadius.circular(10.0),
                                 ),

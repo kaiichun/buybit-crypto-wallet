@@ -43,6 +43,8 @@ dependencies:
   fl_chart: ^0.69.0
   web_socket_channel: ^2.1.0
   syncfusion_flutter_charts: ^21.1.50
+  flutter_local_notifications: ^17.2.3
+  permission_handler: ^10.0.0
 
 dev_dependencies:
   flutter_test:

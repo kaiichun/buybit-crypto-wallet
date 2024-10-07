@@ -6,6 +6,7 @@ import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_order_coin_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
+import 'package:buybit/data/service/notification.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,22 +15,28 @@ class OrderScreen extends StatefulWidget {
   @override
   _OrderScreenState createState() => _OrderScreenState();
 }
+
 class _OrderScreenState extends State<OrderScreen> {
   List<CoinOrder> activeOrders = [];
   final CoinOrderRepository coinOrderRepo = CoinOrderRepository();
   final WalletRepository walletRepo = WalletRepository.instance;
-  bool isLoading = true; 
+  late NotificationService notificationService;
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadActiveOrders();
     _listenToPriceUpdates();
+    notificationService = NotificationService();
   }
+  
+
   Future<void> _loadActiveOrders() async {
     try {
       WalletProvider walletProvider =
           Provider.of<WalletProvider>(context, listen: false);
-      await walletProvider.fetchWallets();
+      // Removed unnecessary fetchWallets call
       List<CoinOrder> orders =
           await coinOrderRepo.getActiveOrders(walletProvider.wallets);
       setState(() {
@@ -40,14 +47,16 @@ class _OrderScreenState extends State<OrderScreen> {
       setState(() {
         isLoading = false;
       });
-      print('Error loading active orders: $e');
+      debugPrint('Error loading active orders: $e');
     }
   }
+
   void _listenToPriceUpdates() {
     ApiService().streamRealTimePrices().listen((coins) {
       _checkOrderConditions(coins);
     });
   }
+
   void _checkOrderConditions(List<Coin> coins) {
     for (var order in activeOrders) {
       final coinPrice = coins.firstWhere(
@@ -60,13 +69,13 @@ class _OrderScreenState extends State<OrderScreen> {
         ),
       );
       order.currentPrice = coinPrice.lastPrice;
-      if (order.type == 'Buy') {
+      if (order.type == 'Buy/Long') {
         if ((order.takeProfit != null &&
                 order.currentPrice >= order.takeProfit!) ||
             (order.stopLoss != null && order.currentPrice <= order.stopLoss!)) {
           _closeOrder(order, order.currentPrice);
         }
-      } else if (order.type == 'Sell') {
+      } else if (order.type == 'Sell/Short') {
         if ((order.takeProfit != null &&
                 order.currentPrice <= order.takeProfit!) ||
             (order.stopLoss != null && order.currentPrice >= order.stopLoss!)) {
@@ -76,38 +85,44 @@ class _OrderScreenState extends State<OrderScreen> {
     }
     setState(() {});
   }
-  Future<void> _closeOrder(CoinOrder order, double currentPrice,
-      {bool isManualClose = false}) async {
+
+  Future<void> _closeOrder(CoinOrder order, double currentPrice) async {
     try {
       double floatingGainOrLoss;
-      if (order.type == 'Sell') {
+      if (order.type == 'Buy/Long') {
         floatingGainOrLoss = (currentPrice - order.price) * order.amount;
-      } else {
+      } else if (order.type == 'Sell/Short') {
         floatingGainOrLoss = (order.price - currentPrice) * order.amount;
+      } else {
+        throw Exception('Invalid order type');
       }
       double profitOrLoss = floatingGainOrLoss;
       String action = '';
-      if (order.type == 'buy') {
+
+      if (order.type == 'Buy/Long') {
         if (order.takeProfit != null && currentPrice >= order.takeProfit!) {
           action = 'takeprofit';
         } else if (order.stopLoss != null && currentPrice <= order.stopLoss!) {
           action = 'stoploss';
         }
-      } else if (order.type == 'Sell') {
+      } else if (order.type == 'Sell/Short') {
         if (order.takeProfit != null && currentPrice <= order.takeProfit!) {
           action = 'takeprofit';
         } else if (order.stopLoss != null && currentPrice >= order.stopLoss!) {
           action = 'stoploss';
         }
       }
+
       await coinOrderRepo.closeOrder(order.walletId, order.id);
+
       if (profitOrLoss > 0) {
         action = 'profit';
         await walletRepo.topUpWallet(order.walletId, profitOrLoss);
       } else {
         action = 'loss';
-        await walletRepo.withdrawWallet(order.walletId, profitOrLoss.abs()); 
+        await walletRepo.withdrawWallet(order.walletId, profitOrLoss.abs());
       }
+
       final WalletHistory history = WalletHistory(
         id: UniqueKey().toString(),
         walletId: order.walletId,
@@ -116,24 +131,29 @@ class _OrderScreenState extends State<OrderScreen> {
         date: DateTime.now(),
       );
       await WalletHistoryRepository().addHistory(history);
+
       await _loadActiveOrders();
+
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Order closed successfully.')));
+
+      await notificationService.showNotification(
+          'Order Closed',
+          'Your ${order.type} order for ${order.symbol} has been closed. '
+              '${profitOrLoss > 0 ? 'You made a profit of' : 'You lost'} ${formatPrice(profitOrLoss.abs())}');
     } catch (e) {
       debugPrint('Error closing order: $e');
     }
   }
+
   String formatPrice(double price) {
-    if (price < 1) {
-      return price.toString();
-    } else {
-      return price.toStringAsFixed(2);
-    }
+    return price.toStringAsFixed(2);
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: AppBar(
+      appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
         title: const Row(
           children: [
@@ -153,7 +173,7 @@ class _OrderScreenState extends State<OrderScreen> {
           ],
         ),
       ),
-      body: isLoading 
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : activeOrders.isEmpty
               ? const Center(child: Text('No active orders'))

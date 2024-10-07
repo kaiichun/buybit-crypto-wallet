@@ -31,6 +31,22 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
   double _currentPrice = 0.0;
   bool _isPriceChanger = true;
   late Timer _timer;
+  String _selectedTimeFrame = '1 Min';
+
+  final Map<String, int> _timeFrameOptions = {
+    '1 Min': 1,
+    '5 Min': 5,
+    '15 Min': 15,
+    '30 Min': 30,
+    '1 Hour': 60,
+    '4 Hours': 240,
+  };
+
+  void _changeTimeFrame(String newTimeFrame) {
+    setState(() {
+      _selectedTimeFrame = newTimeFrame;
+    });
+  }
 
   bool enableSLTP = false;
   double? stopLoss;
@@ -55,7 +71,7 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
     _fetchCandlestickData();
     _loadWallets();
     _timer = Timer.periodic(
-        Duration(seconds: 30), (Timer t) => _fetchCandlestickData());
+        const Duration(seconds: 30), (Timer t) => _fetchCandlestickData());
 
     _apiService.streamRealTimePrices().listen((priceUpdateList) {
       for (var priceUpdate in priceUpdateList) {
@@ -211,31 +227,64 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(widget.coinId,
-                    style: const TextStyle(
-                        color: Colors.black38,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                Text(_currentPrice.toStringAsFixed(2),
-                    style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: _isPriceChanger ? Colors.green : Colors.red)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.coinId,
+                        style: const TextStyle(
+                            color: Colors.black38,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold)),
+                    Text(_currentPrice.toStringAsFixed(2),
+                        style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                _isPriceChanger ? Colors.green : Colors.red)),
+                  ],
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    DropdownButton<String>(
+                      value: _selectedTimeFrame,
+                      elevation: 16,
+                      style: const TextStyle(color: Colors.black),
+                      underline: Container(
+                        height: 2,
+                        color: Colors.blueAccent,
+                      ),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          _changeTimeFrame(newValue);
+                        }
+                      },
+                      items: _timeFrameOptions.keys
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 60),
+                  ],
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
           _candlestickData.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : Expanded(
                   child: SfCartesianChart(
                     primaryXAxis: DateTimeAxis(
-                        autoScrollingDelta: 60,
-                        autoScrollingMode: AutoScrollingMode.end),
+                      autoScrollingDelta:
+                          _timeFrameOptions[_selectedTimeFrame]!,
+                      autoScrollingMode: AutoScrollingMode.end,
+                    ),
                     primaryYAxis: NumericAxis(
                       plotBands: [
                         PlotBand(
@@ -245,7 +294,7 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
                           borderWidth: 1,
                           borderColor:
                               _isPriceChanger ? Colors.green : Colors.red,
-                          dashArray: const [12, 3],
+                          dashArray: const [112, 3],
                           text: _currentPrice.toStringAsFixed(2),
                           textStyle: TextStyle(
                             color: _isPriceChanger ? Colors.green : Colors.red,
@@ -268,6 +317,7 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
                         closeValueMapper: (CandleData data, _) => data.close,
                         bearColor: Colors.redAccent,
                         bullColor: Colors.greenAccent,
+                        animationDuration: 0,
                       ),
                     ],
                     tooltipBehavior: TooltipBehavior(enable: true),
@@ -435,7 +485,7 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
           title: const Text('Select Wallet to Trade'),
           content: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
-              return Container(
+              return SizedBox(
                 width: 300,
                 height: 400,
                 child: Scrollbar(
@@ -510,7 +560,7 @@ class _MarketCoinDetailScreenState extends State<MarketCoinDetailScreen> {
           title: const Text('Select Wallet to Trade'),
           content: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
-              return Container(
+              return SizedBox(
                 width: 300,
                 height: 400,
                 child: Scrollbar(
