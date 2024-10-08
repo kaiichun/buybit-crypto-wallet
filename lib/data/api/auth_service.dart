@@ -44,6 +44,48 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> verifyCurrentPassword(String currentPassword) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: currentPassword,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error verifying current password: $e');
+      return false;
+    }
+  }
+
+
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    try {
+      User? user = _auth.currentUser;
+
+      if (user != null) {
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: oldPassword,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+
+        await user.updatePassword(newPassword);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error changing password: $e');
+      return false;
+    }
+  }
+
   bool isLoggedIn() {
     return _auth.currentUser != null;
   }

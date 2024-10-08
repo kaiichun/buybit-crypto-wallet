@@ -4,6 +4,7 @@ import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/repository/wallet_history_repository.dart';
 import 'package:buybit/data/repository/wallet_repository.dart';
 import 'package:buybit/data/api/notification_service.dart';
+import 'package:buybit/screens/drawer_screen.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,7 @@ class _WalletScreenState extends State<WalletScreen> {
   String selectedFilter = 'All';
   bool isWalletsLoading = true;
   bool isHistoryLoading = true;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -220,6 +222,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     walletProvider = Provider.of<WalletProvider>(context);
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 58, 166, 254),
         title: const Row(
@@ -239,7 +242,19 @@ class _WalletScreenState extends State<WalletScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.settings,
+              color: Color.fromARGB(255, 41, 41, 41),
+            ),
+            onPressed: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
+          ),
+        ],
       ),
+      endDrawer: const AccountDrawer(), 
       body: Column(
         children: [
           Padding(

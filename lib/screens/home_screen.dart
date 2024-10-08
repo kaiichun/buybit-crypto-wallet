@@ -51,11 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _logout() {
-    _authService.logout();
-    Navigator.of(context).pushReplacementNamed('/login');
-  }
-
   String formatBalance(double balance) {
     return balance < 0 ? balance.toString() : balance.toStringAsFixed(2);
   }
@@ -88,15 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.logout,
-              color: Color.fromARGB(255, 41, 41, 41),
-            ),
-            onPressed: _logout,
-          ),
-        ],
       ),
       backgroundColor: Colors.white,
       body: SingleChildScrollView(

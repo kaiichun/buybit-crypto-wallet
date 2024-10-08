@@ -1,4 +1,5 @@
 import 'package:buybit/data/api/auth_service.dart';
+import 'package:buybit/data/provider/auth_provider.dart';
 import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
 import 'package:buybit/data/api/notification_service.dart';
@@ -34,6 +35,9 @@ class BuyBitApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<FavoriteCoinProvider>(
           create: (_) => FavoriteCoinProvider(),
+        ),
+        ChangeNotifierProvider<UserProvider>(
+          create: (_) => UserProvider(),
         ),
       ],
       child: MaterialApp(
