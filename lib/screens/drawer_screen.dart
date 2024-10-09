@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 class AccountDrawer extends StatefulWidget {
   const AccountDrawer({super.key});
+
   @override
   _AccountDrawerState createState() => _AccountDrawerState();
 }
@@ -23,10 +24,17 @@ class _AccountDrawerState extends State<AccountDrawer> {
   void initState() {
     super.initState();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.loadCurrentUser();
     nameController = TextEditingController(text: userProvider.userName);
     currentPasswordController = TextEditingController();
     newPasswordController = TextEditingController();
     confirmPasswordController = TextEditingController();
+
+    userProvider.loadCurrentUser().then((_) {
+      setState(() {
+        nameController.text = userProvider.userName;  // Update nameController with the actual user name
+      });
+    });
   }
 
   @override
@@ -66,10 +74,17 @@ class _AccountDrawerState extends State<AccountDrawer> {
           children: [
             const SizedBox(height: 10),
             Text(
-              userProvider.user?.email ?? 'Unknown Email',
+              userProvider.userEmail,
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Edit Name'),
+              onTap: () {
+                _showEditNameDialog(context);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.lock),
               title: const Text('Change Password'),
@@ -88,6 +103,50 @@ class _AccountDrawerState extends State<AccountDrawer> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showEditNameDialog(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'New Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final newName = nameController.text.trim();
+                if (newName.isNotEmpty) {
+                  userProvider.updateUserName(newName);  // Assuming updateUserName is a method in the provider
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Name updated successfully!'),
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Name cannot be empty.'),
+                  ));
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
     );
   }
 

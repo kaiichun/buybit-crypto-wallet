@@ -400,111 +400,119 @@ class _WalletScreenState extends State<WalletScreen> {
               ],
             ),
           ),
-          isWalletsLoading
-              ? const Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text(
-                          "Wallet is loading",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
-                    itemCount: wallets.length,
-                    itemBuilder: (context, index) {
-                      final wallet = wallets[index];
-                      return GestureDetector(
-                        onDoubleTap: () {
-                          _setDefaultWallet(wallet);
-                        },
-                        onLongPress: () {
-                          _displayEditWallet(wallet);
-                        },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            side: BorderSide(
-                              color: wallet.isDefault
-                                  ? Colors.green
-                                  : const Color.fromARGB(255, 193, 193, 193),
-                              width: wallet.isDefault ? 3 : 0,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: ListTile(
-                                    title: Text(
-                                      wallet.name,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(wallet.id),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              icon: const Icon(Icons.copy),
-                                              onPressed: () {
-                                                Clipboard.setData(ClipboardData(
-                                                    text: wallet.id));
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  const SnackBar(
-                                                      content: Text(
-                                                          'Wallet ID copied to clipboard')),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                            'Balance (${wallet.currency}): ${formatBalance(wallet.balance)}'),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                if (wallet.isDefault)
-                                  const Padding(
-                                    padding: EdgeInsets.only(right: 12.0),
-                                    child: Text(
-                                      'Default',
-                                      style: TextStyle(
-                                        color: Color.fromRGBO(76, 175, 80, 1),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+       isWalletsLoading
+    ? const Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 8),
+              Text(
+                "Wallet is loading",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      )
+    : Expanded(
+        child: wallets.isEmpty
+            ? const Center(
+                child: Text(
+                  'Go to create your first wallet',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
+                itemCount: wallets.length,
+                itemBuilder: (context, index) {
+                  final wallet = wallets[index];
+                  return GestureDetector(
+                    onDoubleTap: () {
+                      _setDefaultWallet(wallet);
+                    },
+                    onLongPress: () {
+                      _displayEditWallet(wallet);
+                    },
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      elevation: 5,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
+                        side: BorderSide(
+                          color: wallet.isDefault
+                              ? Colors.green
+                              : const Color.fromARGB(255, 193, 193, 193),
+                          width: wallet.isDefault ? 3 : 0,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: ListTile(
+                                title: Text(
+                                  wallet.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(wallet.id),
+                                        const SizedBox(width: 8),
+                                        IconButton(
+                                          icon: const Icon(Icons.copy),
+                                          onPressed: () {
+                                            Clipboard.setData(
+                                                ClipboardData(text: wallet.id));
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text(
+                                                      'Wallet ID copied to clipboard')),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                        'Balance (${wallet.currency}): ${formatBalance(wallet.balance)}'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (wallet.isDefault)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 12.0),
+                                child: Text(
+                                  'Default',
+                                  style: TextStyle(
+                                    color: Color.fromRGBO(76, 175, 80, 1),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+      ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18.0, 8.0, 18.0, 0.0),
             child: Row(
@@ -538,25 +546,37 @@ class _WalletScreenState extends State<WalletScreen> {
               ],
             ),
           ),
-          isHistoryLoading
-              ? const Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text(
-                          "History is loading",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+     isHistoryLoading
+    ? const Expanded(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 8),
+              Text(
+                "History is loading",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      )
+        : Expanded(
+            child: walletHistories.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No history available',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                )
-              : Expanded(
-                  child: ListView.builder(
+                  )
+                : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(18.0, 0.0, 18.0, 0.0),
                     itemCount: walletHistories.length,
                     itemBuilder: (context, index) {
@@ -610,7 +630,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       );
                     },
                   ),
-                ),
+          ),
         ],
       ),
     );
