@@ -1,5 +1,4 @@
 import 'package:buybit/data/api/api_service.dart';
-import 'package:buybit/data/api/auth_service.dart';
 import 'package:buybit/data/modal/coin.dart';
 import 'package:buybit/data/provider/favorite_coin_provider.dart';
 import 'package:buybit/data/provider/wallet_provider.dart';
@@ -15,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
   late WalletProvider walletProvider;
   List<Coin> _favoriteCoins = [];

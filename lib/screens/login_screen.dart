@@ -69,24 +69,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    height: 100,
-                    width: 100,
+                    height: 220,
+                    width: 250,
                     decoration: const BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage('images/bitcoin.webp'),
+                        image: AssetImage('images/buybit-white.png'),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Welcome to BuyBit',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 60),
                   TextField(
                     controller: _emailController,
                     decoration: InputDecoration(

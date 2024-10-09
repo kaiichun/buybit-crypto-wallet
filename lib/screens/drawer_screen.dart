@@ -32,7 +32,7 @@ class _AccountDrawerState extends State<AccountDrawer> {
 
     userProvider.loadCurrentUser().then((_) {
       setState(() {
-        nameController.text = userProvider.userName;  // Update nameController with the actual user name
+        nameController.text = userProvider.userName;
       });
     });
   }
@@ -75,16 +75,12 @@ class _AccountDrawerState extends State<AccountDrawer> {
             const SizedBox(height: 10),
             Text(
               userProvider.userEmail,
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Edit Name'),
-              onTap: () {
-                _showEditNameDialog(context);
-              },
-            ),
             ListTile(
               leading: const Icon(Icons.lock),
               title: const Text('Change Password'),
@@ -103,50 +99,6 @@ class _AccountDrawerState extends State<AccountDrawer> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showEditNameDialog(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Name'),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'New Name',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final newName = nameController.text.trim();
-                if (newName.isNotEmpty) {
-                  userProvider.updateUserName(newName);  // Assuming updateUserName is a method in the provider
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Name updated successfully!'),
-                  ));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Name cannot be empty.'),
-                  ));
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -233,9 +185,11 @@ class _AccountDrawerState extends State<AccountDrawer> {
             ),
             TextButton(
               onPressed: () async {
-                if (newPasswordController.text != confirmPasswordController.text) {
+                if (newPasswordController.text !=
+                    confirmPasswordController.text) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('New password and confirmation do not match.'),
+                    content:
+                        Text('New password and confirmation do not match.'),
                   ));
                   return;
                 }

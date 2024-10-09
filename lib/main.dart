@@ -41,6 +41,7 @@ class BuyBitApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'BuyBit',
         theme: ThemeData(
           primarySwatch: Colors.green,
